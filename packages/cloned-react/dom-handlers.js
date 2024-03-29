@@ -18,7 +18,7 @@ const renderPrimitiveValue = (element) => {
 };
 
 const renderHtmlTag = ({ type, props }) => {
-  // console.log("rendering object", type, props);
+  console.log("rendering object", type, props);
   const el = document.createElement(type);
 
   Object.keys(props).forEach((prop) => {
@@ -59,20 +59,27 @@ const renderHtmlTag = ({ type, props }) => {
 };
 
 const transformJSXtoHTML = (element) => {
+  console.log(element);
   if (element === null) {
     return null;
   }
-  const renderedElement = isPrimitiveElement(element)
-    ? renderPrimitiveValue(element)
-    : renderHtmlTag(element);
-  return renderedElement;
+  if (typeof element.type === "function") {
+    console.log("it is a function!", element);
+    const FunctionalComponent = element.type;
+    const renderedElement = FunctionalComponent(element.props);
+    return transformJSXtoHTML(renderedElement);
+  } else {
+    const renderedElement = isPrimitiveElement(element)
+      ? renderPrimitiveValue(element)
+      : renderHtmlTag(element);
+    return renderedElement;
+  }
 };
 
 const createRoot = (rootElement) => ({
   rootElement,
   // The render method expects to recieve transformed JSX, to render as HTML into the rootElement
   render: (rootChild) => {
-    console.log(rootChild);
     const rootChildEl = transformJSXtoHTML(rootChild);
     rootElement.appendChild(rootChildEl);
   },
