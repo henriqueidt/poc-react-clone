@@ -5,4 +5,4 @@ export default React;
 export const useState = () => [];
 export const useEffect = () => {};
 
-export const { _ } = React;
+export const { __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED } = React;
