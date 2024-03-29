@@ -11,7 +11,7 @@ const renderPrimitiveValue = (element) => {
     case "undefined":
       return;
     case "boolean":
-      return element ? renderPrimitiveToHtml("true") : undefined;
+      return element ? renderPrimitiveValue("true") : undefined;
     default:
       throw new Error(`Type ${element} is not a known renderable type.`);
   }
@@ -32,7 +32,10 @@ const renderHtmlTag = ({ type, props }) => {
           // if prop is a children array, it means it is a list of elements,
           // so iterate over the array and append each element to the parent element
           props[prop].forEach((child) => {
-            el.appendChild(transformJSXtoHTML(child));
+            const childEl = transformJSXtoHTML(child);
+            if (childEl) {
+              el.appendChild(childEl);
+            }
           });
         } else {
           // if prop is a children object, it means it is another element,
@@ -56,6 +59,9 @@ const renderHtmlTag = ({ type, props }) => {
 };
 
 const transformJSXtoHTML = (element) => {
+  if (element === null) {
+    return null;
+  }
   const renderedElement = isPrimitiveElement(element)
     ? renderPrimitiveValue(element)
     : renderHtmlTag(element);
