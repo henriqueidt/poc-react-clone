@@ -1,0 +1,21 @@
+{
+  "name": "poc-react-clone",
+  "version": "1.0.0",
+  "description": "A POC to recriate react and core functionalities (render, props, mount/unmount hooks)",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/henriqueidt/poc-react-clone.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/henriqueidt/poc-react-clone/issues"
+  },
+  "homepage": "https://github.com/henriqueidt/poc-react-clone#readme",
+  "workspaces": [
+    "packages/cloned-react"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "cloned-react",
+  "version": "1.0.0",
+  "description": "Custom React library",
+  "main": "index.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/henriqueidt/poc-react-clone.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/henriqueidt/poc-react-clone/issues"
+  },
+  "homepage": "https://github.com/henriqueidt/poc-react-clone#readme",
+  "dependencies": {
+    "react": "^18.2.0"
+  },
+  "exports": {
+    ".": {
+      "default": "./index.js"
+    },
+    "./jsx-runtime": "./jsx-runtime",
+    "./jsx-dev-runtime": "./jsx-dev-runtime"
+  }
+}
