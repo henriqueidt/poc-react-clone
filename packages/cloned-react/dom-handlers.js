@@ -1,24 +1,22 @@
-const isPrimitiveElement = (element) => {
-  return typeof element !== "object";
-};
+import { subscribeRender } from ".";
+import { isPrimitiveElement } from "./utils";
 
-const renderPrimitiveValue = (element) => {
-  console.log("rendering primitive", element);
-  switch (typeof element) {
+const renderPrimitiveValue = ({ value }) => {
+  console.log("renderPrimitiveValue", value);
+  switch (typeof value) {
     case "string":
     case "number":
-      return document.createTextNode(element);
+      return document.createTextNode(value);
     case "undefined":
       return;
     case "boolean":
-      return element ? renderPrimitiveValue("true") : undefined;
+      return value ? renderPrimitiveValue("true") : undefined;
     default:
-      throw new Error(`Type ${element} is not a known renderable type.`);
+      throw new Error(`Type ${value} is not a known renderable type.`);
   }
 };
 
 const renderHtmlTag = ({ type, props }) => {
-  console.log("rendering object", type, props);
   const el = document.createElement(type);
 
   Object.keys(props).forEach((prop) => {
@@ -27,8 +25,7 @@ const renderHtmlTag = ({ type, props }) => {
         // if prop is a children string, set the textContent of the element
         el.textContent = props[prop];
       } else {
-        // console.log("entreiaqui", props[prop].length);
-        if (props[prop].length > 1) {
+        if (Array.isArray(props[prop])) {
           // if prop is a children array, it means it is a list of elements,
           // so iterate over the array and append each element to the parent element
           props[prop].forEach((child) => {
@@ -59,12 +56,10 @@ const renderHtmlTag = ({ type, props }) => {
 };
 
 const transformJSXtoHTML = (element) => {
-  console.log(element);
   if (element === null) {
     return null;
   }
   if (typeof element.type === "function") {
-    console.log("it is a function!", element);
     const FunctionalComponent = element.type;
     const renderedElement = FunctionalComponent(element.props);
     return transformJSXtoHTML(renderedElement);
@@ -80,8 +75,23 @@ const createRoot = (rootElement) => ({
   rootElement,
   // The render method expects to recieve transformed JSX, to render as HTML into the rootElement
   render: (rootChild) => {
-    const rootChildEl = transformJSXtoHTML(rootChild);
-    rootElement.appendChild(rootChildEl);
+    let lastChild;
+    subscribeRender(rootChild, (renderableVDOM) => {
+      let rootChildAsHTML;
+      console.log("callback", renderableVDOM);
+
+      rootChildAsHTML = transformJSXtoHTML(renderableVDOM);
+
+      if (!lastChild) {
+        rootElement.appendChild(rootChildAsHTML);
+      } else {
+        rootElement.replaceChild(rootChildAsHTML, lastChild);
+      }
+      lastChild = rootChildAsHTML;
+    });
+
+    // const rootChildEl = transformJSXtoHTML(rootChild);
+    // rootElement.appendChild(rootChildEl);
   },
 });
 
