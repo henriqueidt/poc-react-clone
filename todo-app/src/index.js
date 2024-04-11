@@ -28,12 +28,12 @@ const FirstComponent = ({ title }) => {
 //       {true && "value with true"}
 //       {false && "value with false"}
 //       {undefined}
-//       {null}
+//       {/* {null} */}
 //     </div>
 //     {true && "value with true"}
 //     {false}
-//     {undefined}
-//     {null}
+//     {/* {undefined} */}
+//     {/* {null} */}
 //   </div>
 // );
 
