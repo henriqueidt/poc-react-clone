@@ -20,6 +20,7 @@ const renderHtmlTag = ({ type, props }) => {
   const el = document.createElement(type);
 
   Object.keys(props).forEach((prop) => {
+    console.log(prop, "PROP");
     if (prop === "children") {
       if (typeof props[prop] === "string") {
         // if prop is a children string, set the textContent of the element
@@ -40,6 +41,9 @@ const renderHtmlTag = ({ type, props }) => {
           el.appendChild(transformJSXtoHTML(props[prop]));
         }
       }
+    } else if (prop === "onClick") {
+      // here we would add all event handlers, but we're adding only click for simplicity
+      el.addEventListener("click", props[prop]);
     } else {
       // if is not children, just add the attribute to the element
       // console.log(prop);

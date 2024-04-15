@@ -1,11 +1,39 @@
 import React from "react";
 import "./index.css";
 
-import { DOMHandlers } from "cloned-react";
+import { DOMHandlers, useState } from "cloned-react";
 
 const rootElement = document.getElementById("root");
 
 const root = DOMHandlers.createRoot(rootElement);
+
+const ChildComponent = () => {
+  const [count, setCount] = useState(1);
+  const [count2, setCount2] = useState(2);
+  // setCount(33);
+  console.log("COOUNNNNTTTTTTTTTTTTTTTTTTTTTT", count);
+
+  const onClick = () => {
+    console.log("CLICK");
+    setCount(count + 1);
+  };
+
+  return (
+    <div>
+      <div>{count}</div>
+      <div>{count2}</div>
+      <button onClick={onClick}>Increment1</button>
+      <button onClick={() => setCount2(count2 + 1)}>Increment 2</button>
+    </div>
+  );
+};
+
+const AnotherComponent = () => {
+  console.log(
+    "Another component should not be called when ChildComponent state changes!!!"
+  );
+  return <div>Another component</div>;
+};
 
 const FirstComponent = ({ title }) => {
   return (
@@ -13,6 +41,8 @@ const FirstComponent = ({ title }) => {
       adasd
       {title}
       <span>{title}</span>
+      <ChildComponent />
+      <AnotherComponent />
     </div>
   );
 };

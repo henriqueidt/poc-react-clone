@@ -1,10 +1,12 @@
 import { element, object } from "prop-types";
 import * as React from "../../node_modules/react";
 import { isPrimitiveElement, isPrimitiveObject } from "./utils";
+import { createHooks, useState } from "./hooks";
 export { DOMHandlers } from "./dom-handlers";
 export default React;
 
-export const useState = () => [];
+// export const useState = () => [];
+export { useState };
 export const useEffect = () => {};
 
 export const { __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED } = React;
@@ -61,7 +63,7 @@ const renderPrimitiveValue = (element, VDOM, path) => {
   return VDOMElement.element;
 };
 
-const renderComponent = (element, VDOM, path) => {
+const renderComponent = (element, VDOM, path, hooks) => {
   const {
     props: { children, ...props },
     type,
@@ -81,15 +83,16 @@ const renderComponent = (element, VDOM, path) => {
   if (typeof type === "function") {
     const FunctionalComponent = type;
 
+    hooks.registerHooks(path, isFirstRender);
     const renderedElement = FunctionalComponent(element.props);
-    const renderedDomEl = render(renderedElement, VDOM, [...path, 0]);
+    const renderedDomEl = render(renderedElement, VDOM, [...path, 0], hooks);
     return renderedDomEl;
   }
 
   if (typeof children !== "undefined") {
     const childrenArray = Array.isArray(children) ? children : [children];
     const renderedChildren = childrenArray.map((child, index) =>
-      render(child, VDOM, [...path, index])
+      render(child, VDOM, [...path, index], hooks)
     );
 
     return {
@@ -110,19 +113,20 @@ const renderComponent = (element, VDOM, path) => {
   };
 };
 
-const render = (element, VDOM, path) =>
+const render = (element, VDOM, path, hooks) =>
   isPrimitiveObject(element)
     ? renderPrimitiveValue(element, VDOM, path)
-    : renderComponent(element, VDOM, path);
+    : renderComponent(element, VDOM, path, hooks);
 
 export const subscribeRender = (element, callback) => {
   let VDOM = {
     previous: {},
     current: {},
   };
-  const update = () => {
+  const update = (hooks) => {
+    console.log("UPDATE");
     // render the root element
-    const renderableVDOM = render(element, VDOM, []);
+    const renderableVDOM = render(element, VDOM, [], hooks);
 
     VDOM.previous = VDOM.current;
     VDOM.current = [];
@@ -130,5 +134,9 @@ export const subscribeRender = (element, callback) => {
     callback(renderableVDOM);
   };
 
-  update();
+  const hooks = createHooks(update);
+
+  console.log(hooks, "HOOKS");
+
+  update(hooks);
 };
