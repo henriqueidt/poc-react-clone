@@ -10,8 +10,6 @@ const root = DOMHandlers.createRoot(rootElement);
 const ChildComponent = () => {
   const [count, setCount] = useState(1);
   const [count2, setCount2] = useState(2);
-  // setCount(33);
-  console.log("COOUNNNNTTTTTTTTTTTTTTTTTTTTTT", count);
 
   const onClick = () => {
     console.log("CLICK");

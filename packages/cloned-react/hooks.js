@@ -1,7 +1,6 @@
 let globalHooks = {};
 
 export const useState = (...args) => {
-  console.log("useState1", globalHooks.useState(args)[1]);
   return globalHooks.useState(...args);
 };
 
@@ -38,7 +37,6 @@ const createUseState = (onUpdate, hooksMap) => (path, isFirstRender) => {
   // The function returned here, is actually the useState hook
   // that will be used in the component
   return (initialState) => {
-    console.log("initialstate", path);
     const stateIndex = stateIndexRef;
     stateIndexRef++;
 
@@ -48,7 +46,6 @@ const createUseState = (onUpdate, hooksMap) => (path, isFirstRender) => {
         typeof initialState === "function" ? initialState() : initialState;
 
       const setState = (newState) => {
-        console.log("newState", newState);
         // same thing as above here, newState can be a function, so we need to call to get the value
         const newStateFn =
           typeof newState === "function" ? newState : () => newState;
@@ -64,8 +61,6 @@ const createUseState = (onUpdate, hooksMap) => (path, isFirstRender) => {
       };
       currentHook.state[stateIndex] = [initialStateValue, setState];
     }
-
-    console.log("currentHook", hooksMap);
 
     return currentHook.state[stateIndex];
   };
@@ -85,7 +80,6 @@ const setHooksRegistry =
     // We create the useState hook for the component
     // const useState = useStateRegistry(path, isFirstRender);
     globalHooks.useState = useStateRegistry(path, isFirstRender);
-    console.log("SETTING HOOKS REGISTRY", globalHooks);
   };
 
 export const createHooks = (update) => {
@@ -107,6 +101,5 @@ export const createHooks = (update) => {
   const useState = createUseState(onUpdate, hooksMap);
   const registerHooks = setHooksRegistry(hooksMap, useState);
   hooks.current = { registerHooks };
-  console.log("hooksmap", hooksMap);
   return hooks.current;
 };

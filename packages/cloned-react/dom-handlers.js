@@ -2,7 +2,6 @@ import { subscribeRender } from ".";
 import { isPrimitiveElement } from "./utils";
 
 const renderPrimitiveValue = ({ value }) => {
-  console.log("renderPrimitiveValue", value);
   switch (typeof value) {
     case "string":
     case "number":
@@ -20,7 +19,6 @@ const renderHtmlTag = ({ type, props }) => {
   const el = document.createElement(type);
 
   Object.keys(props).forEach((prop) => {
-    console.log(prop, "PROP");
     if (prop === "children") {
       if (typeof props[prop] === "string") {
         // if prop is a children string, set the textContent of the element
@@ -82,7 +80,6 @@ const createRoot = (rootElement) => ({
     let lastChild;
     subscribeRender(rootChild, (renderableVDOM) => {
       let rootChildAsHTML;
-      console.log("callback", renderableVDOM);
 
       rootChildAsHTML = transformJSXtoHTML(renderableVDOM);
 

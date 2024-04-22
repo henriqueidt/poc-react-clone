@@ -3,6 +3,7 @@ import * as React from "../../node_modules/react";
 import { isPrimitiveElement, isPrimitiveObject } from "./utils";
 import { createHooks, useState } from "./hooks";
 export { DOMHandlers } from "./dom-handlers";
+import { getVDOMDiff } from "./VDOMDiff";
 export default React;
 
 // export const useState = () => [];
@@ -33,7 +34,7 @@ const createVDOMElement = (element, path) => {
 };
 
 // Navigates through the VDOM to find the element at the given path
-const getVDOMElementByPath = (path, VDOMElement) => {
+export const getVDOMElementByPath = (path, VDOMElement) => {
   return path.reduce((targetEl, currentIndex) => {
     if (targetEl) {
       return (targetEl.children || [])[currentIndex];
@@ -124,9 +125,12 @@ export const subscribeRender = (element, callback) => {
     current: {},
   };
   const update = (hooks) => {
-    console.log("UPDATE");
     // render the root element
     const renderableVDOM = render(element, VDOM, [], hooks);
+
+    const VDOMDiff = getVDOMDiff(renderableVDOM, VDOM);
+
+    console.log(VDOMDiff, "VDOMDiff");
 
     VDOM.previous = VDOM.current;
     VDOM.current = [];
@@ -135,8 +139,6 @@ export const subscribeRender = (element, callback) => {
   };
 
   const hooks = createHooks(update);
-
-  console.log(hooks, "HOOKS");
 
   update(hooks);
 };
