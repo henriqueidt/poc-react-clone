@@ -14,6 +14,14 @@ const propsChangeTypes = {
   REMOVED: "REMOVED",
 };
 
+export const diffOrder = [
+  changeTypes.NODE_REMOVED,
+  changeTypes.NODE_ADDED,
+  changeTypes.NODE_REPLACED,
+  changeTypes.PRIMITIVE_UPDATED,
+  changeTypes.PROPS,
+];
+
 /**
  * for NODE_ADDED change type
  * we need to pass what is the node to add
@@ -34,9 +42,9 @@ const createNodeAdded = (VDOMElement, parentPointer) => {
  * for NODE_REMOVED change type
  * we need to pass only the path to the node to remove
  **/
-const createNodeRemoved = (VDOMElement) => {
+const createNodeRemoved = (path) => {
   return {
-    path: VDOMElement.path,
+    path,
     type: changeTypes.NODE_REMOVED,
     payload: {},
   };
@@ -185,6 +193,7 @@ export const getVDOMDiff = (VDOMElement, VDOM, parentPointer) => {
 
     // if there is no children in the current index, it means the previous one was removed
     if (!currentChild) {
+      console.log("REMOVE", previousChildren[i].element.path);
       diff.push(createNodeRemoved(previousChildren[i].element.path));
       continue;
     }

@@ -13,13 +13,13 @@ const ChildComponent = () => {
 
   const onClick = () => {
     console.log("CLICK");
-    setCount(count + 1);
+    setCount(undefined);
   };
 
   return (
     <div>
       <div>{count}</div>
-      <div>{count2}</div>
+      {count2 === 2 && <div>{count2}</div>}
       <button onClick={onClick}>Increment1</button>
       <button onClick={() => setCount2(count2 + 1)}>Increment 2</button>
     </div>

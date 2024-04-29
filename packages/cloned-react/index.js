@@ -135,7 +135,7 @@ export const subscribeRender = (element, callback) => {
     VDOM.previous = VDOM.current;
     VDOM.current = [];
 
-    callback(renderableVDOM);
+    callback(renderableVDOM, VDOMDiff);
   };
 
   const hooks = createHooks(update);
