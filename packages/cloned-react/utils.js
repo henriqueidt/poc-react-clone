@@ -16,3 +16,11 @@ export const isChildPath = (path, parentPath) => {
   // to indicate that it is a child of the parent
   return new RegExp(`^${parentPath},(\\d+,?)+`).test(path);
 };
+
+export const eventHandlers = {
+  onClick: "click",
+  onChange: "input",
+  onSubmit: "submit",
+};
+
+export const isEventHandler = (key) => Object.keys(eventHandlers).includes(key);

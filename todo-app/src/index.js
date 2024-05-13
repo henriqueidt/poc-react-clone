@@ -10,20 +10,41 @@ const root = DOMHandlers.createRoot(rootElement);
 const ChildComponent = () => {
   const [count, setCount] = useState(1);
   const [count2, setCount2] = useState(2);
+  const [count3, setCount3] = useState(3);
+  const [title, setTitle] = useState("this is a title");
 
   const onClick = () => {
-    console.log("CLICK");
     setCount(undefined);
+  };
+
+  const onClick2 = () => {
+    setCount2(<div>asdasd</div>);
+  };
+
+  const onClick3 = () => {
+    setCount3((prev) => prev + 1);
+  };
+
+  const onClick4 = () => {
+    setTitle("updated title");
   };
 
   return (
     <div>
       <div>{count}</div>
-      {count2 === 2 && <div>{count2}</div>}
-      <button onClick={onClick}>Increment1</button>
-      <button onClick={() => setCount2(count2 + 1)}>Increment 2</button>
+      <div>{count2}</div>
+      <div>{count3}</div>
+      <ComponentWithProps title={title} />
+      <button onClick={onClick}>remove first</button>
+      <button onClick={onClick2}>replace second</button>
+      <button onClick={onClick3}>Increment 3</button>
+      <button onClick={onClick4}>Update fourth props</button>
     </div>
   );
+};
+
+const ComponentWithProps = ({ title }) => {
+  return <div>{title}</div>;
 };
 
 const AnotherComponent = () => {

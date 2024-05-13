@@ -9,7 +9,7 @@ const changeTypes = {
   PROPS: "PROPS",
 };
 
-const propsChangeTypes = {
+export const propsChangeTypes = {
   UPDATED: "UPDATED",
   REMOVED: "REMOVED",
 };

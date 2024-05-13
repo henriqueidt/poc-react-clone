@@ -1,6 +1,35 @@
 import { subscribeRender } from ".";
-import { diffOrder } from "./VDOMDiff";
-import { isChildPath, isPrimitiveElement } from "./utils";
+import { diffOrder, propsChangeTypes } from "./VDOMDiff";
+import {
+  eventHandlers,
+  isChildPath,
+  isEventHandler,
+  isPrimitiveElement,
+} from "./utils";
+
+const removeEventHandler = (element, { key, value }) => {
+  element.removeEventListener(eventHandlers[key], value);
+};
+
+const addEventHandler = (element, { key, value }) => {
+  element.addEventListener(eventHandlers[key], value);
+};
+
+const findRenderableByPath = (renderableVDOM, path) => {
+  if (!renderableVDOM) {
+    return;
+  }
+  if (renderableVDOM.path === path) {
+    return renderableVDOM;
+  }
+  if (renderableVDOM.type === "primitive" || !renderableVDOM.props.children) {
+    return;
+  }
+  return renderableVDOM.props.children.reduce(
+    (foundEl, child) => (foundEl ? foundEl : findRenderableByPath(child, path)),
+    null
+  );
+};
 
 // finds all the children of a given element by its path
 const findRenderedChildrenByPath = (renderedElementsMap, path) => {
@@ -8,6 +37,35 @@ const findRenderedChildrenByPath = (renderedElementsMap, path) => {
   return Object.entries(renderedElementsMap).filter(([elPath]) => {
     isChildPath(elPath, path);
   });
+};
+
+const findNextSiblingByPath = (
+  { renderedElementsMap, renderableVDOM },
+  path,
+  parentPointer
+) => {
+  const parentElFromVDOM = findRenderableByPath(renderableVDOM, parentPointer);
+  const parentChildren = parentElFromVDOM.props.children;
+  const childrenVDOMIndex = parentChildren.findIndex(
+    (child) => child.path === path
+  );
+  let nextSiblingVDOMIndex = childrenVDOMIndex + 1;
+  let nextSibling;
+
+  // nextSibling can be a variable that doesn't render (false)
+  // or a sibling that is not rendered yet (it is being added in this cycle)
+  while (
+    nextSiblingVDOMIndex < parentChildren.length &&
+    nextSibling === undefined
+  ) {
+    const nextSiblingFromVDOM =
+      parentElFromVDOM.props.children[nextSiblingVDOMIndex];
+    if (nextSiblingFromVDOM) {
+      nextSibling = renderedElementsMap[nextSiblingFromVDOM.path];
+    }
+    nextSiblingVDOMIndex += 1;
+  }
+  return nextSibling;
 };
 
 const findRootVDOMPaths = (paths) => {
@@ -35,6 +93,26 @@ const findRootVDOMPaths = (paths) => {
   return rootPaths;
 };
 
+const applyProps = ({ key, value }, element) => {
+  if (isEventHandler(key)) {
+    addEventHandler(element, { key, value });
+    return;
+  }
+  if (element[key] !== undefined) {
+    element[key] = value;
+    return;
+  }
+  element.setAttribute(key, value);
+};
+
+const removeProp = ({ key, oldValue }, element) => {
+  if (isEventHandler(key)) {
+    removeEventHandler(element, { key, value: oldValue });
+    return;
+  }
+  element.removeAttribute(key);
+};
+
 const operateNodeRemove = ({ renderedElementsMap }, { path }) => {
   console.log("starting to remove");
   const element = renderedElementsMap[path];
@@ -58,6 +136,79 @@ const operateNodeRemove = ({ renderedElementsMap }, { path }) => {
   delete renderedElementsMap[path];
 };
 
+const operateNodeAdd = (
+  { renderedElementsMap, renderableVDOM },
+  { path, payload: { node, parentPointer } }
+) => {
+  console.log("NODE BEING ADDED");
+  const parentElement = renderedElementsMap[parentPointer];
+  const nextSibling = findNextSiblingByPath(
+    { renderedElementsMap, renderableVDOM },
+    path,
+    parentPointer
+  );
+
+  const addedEl = transformJSXtoHTML(node, renderedElementsMap);
+  // if addedEl is false, it means that the element is not rendered
+  // so we don't need to append it to the parent
+  if (!addedEl) {
+    renderedElementsMap[path] = addedEl;
+    return;
+  }
+
+  // Adds the element to the parent, right before nextSibling
+  // If nextSibling is undefined, it means that the element is the last child,
+  // so insertBefore will add it at the end of the parent
+  parentElement.insertBefore(addedEl, nextSibling);
+  renderedElementsMap[path] = addedEl;
+};
+
+const operateNodeReplace = (
+  { renderedElementsMap, renderableVDOM },
+  { path, payload: { newNode, parentPointer } }
+) => {
+  operateNodeRemove({ renderedElementsMap }, { path });
+  operateNodeAdd(
+    { renderedElementsMap, renderableVDOM },
+    { path, payload: { node: newNode, parentPointer } }
+  );
+};
+
+const operatePrimitiveUpdate = (
+  { renderedElementsMap },
+  { path, payload: { newElement } }
+) => {
+  renderedElementsMap[path].nodeValue = newElement.value;
+};
+
+const operatePropsUpdate = (
+  { renderedElementsMap },
+  { path, payload: { changedProps } }
+) => {
+  Object.entries(changedProps).forEach(
+    ([key, [propChangeType, { oldValue, newValue }]]) => {
+      if (propChangeType === propsChangeTypes.UPDATED) {
+        // if the prop is an event handler, remove the old event handler before applying the new one
+        if (isEventHandler(key)) {
+          removeEventHandler(renderedElementsMap[path], {
+            key,
+            value: oldValue,
+          });
+        }
+        applyProps(
+          {
+            key,
+            value: newValue,
+          },
+          renderedElementsMap[path]
+        );
+      } else if (propChangeType === propsChangeTypes.REMOVED) {
+        removeProp({ key, oldValue }, renderedElementsMap[path]);
+      }
+    }
+  );
+};
+
 const applyDiff = (diff, renderedElementsMap, renderableVDOM) => {
   const sortedDiffs = diff.sort(
     (a, b) => diffOrder.indexOf(a.type) - diffOrder.indexOf(b.type)
@@ -68,13 +219,17 @@ const applyDiff = (diff, renderedElementsMap, renderableVDOM) => {
       case "NODE_REMOVED":
         operateNodeRemove({ renderedElementsMap }, diff);
         break;
-      case "PROPS_UPDATED":
+      case "NODE_ADDED":
+        operateNodeAdd(({ renderedElementsMap, renderableVDOM }, diff));
         break;
-      case "PROPS_CHANGE_UPDATED":
-        break;
-      case "PROPS_CHANGE_REMOVED":
+      case "NODE_REPLACED":
+        operateNodeReplace({ renderedElementsMap, renderableVDOM }, diff);
         break;
       case "PRIMITIVE_UPDATED":
+        operatePrimitiveUpdate({ renderedElementsMap }, diff);
+        break;
+      case "PROPS":
+        operatePropsUpdate({ renderedElementsMap }, diff);
         break;
       default:
         break;
@@ -142,6 +297,7 @@ const transformJSXtoHTML = (element, renderedElementsMap) => {
   if (element === null) {
     return null;
   }
+  console.log(element);
   if (typeof element.type === "function") {
     const FunctionalComponent = element.type;
     const renderedElement = FunctionalComponent(element.props);
