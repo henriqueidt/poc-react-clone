@@ -1,7 +1,7 @@
 import React from "react";
 import "./index.css";
 
-import { DOMHandlers, useState } from "cloned-react";
+import { DOMHandlers, useEffect, useState } from "cloned-react";
 
 const rootElement = document.getElementById("root");
 
@@ -12,6 +12,19 @@ const ChildComponent = () => {
   const [count2, setCount2] = useState(2);
   const [count3, setCount3] = useState(3);
   const [title, setTitle] = useState("this is a title");
+  const [value, setValue] = useState("");
+
+  useEffect(() => {
+    console.log("this effect should be called on first render");
+  }, []);
+
+  useEffect(() => {
+    console.log("this effect should be called when count3 changes", count3);
+  }, [count3]);
+
+  useEffect(() => {
+    console.log("this effect should be called when title changes", title);
+  }, [title]);
 
   const onClick = () => {
     setCount(undefined);
@@ -29,6 +42,10 @@ const ChildComponent = () => {
     setTitle("updated title");
   };
 
+  const onChange = (e) => {
+    setValue(e.target.value);
+  };
+
   return (
     <div>
       <div>{count}</div>
@@ -39,6 +56,7 @@ const ChildComponent = () => {
       <button onClick={onClick2}>replace second</button>
       <button onClick={onClick3}>Increment 3</button>
       <button onClick={onClick4}>Update fourth props</button>
+      <input type="text" onChange={onChange} value={value} />
     </div>
   );
 };

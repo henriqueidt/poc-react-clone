@@ -1,14 +1,12 @@
 import { element, object } from "prop-types";
 import * as React from "../../node_modules/react";
 import { isPrimitiveElement, isPrimitiveObject } from "./utils";
-import { createHooks, useState } from "./hooks";
+import { createHooks, useState, useEffect } from "./hooks";
 export { DOMHandlers } from "./dom-handlers";
 import { getVDOMDiff } from "./VDOMDiff";
 export default React;
 
-// export const useState = () => [];
-export { useState };
-export const useEffect = () => {};
+export { useState, useEffect };
 
 export const { __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED } = React;
 
@@ -124,6 +122,14 @@ export const subscribeRender = (element, callback) => {
     previous: {},
     current: {},
   };
+
+  // Function to be called after the update triggered by hooks
+  let afterUpdateFn;
+
+  const onUpdateCallback = (callback) => {
+    afterUpdateFn = callback;
+  };
+
   const update = (hooks) => {
     // render the root element
     const renderableVDOM = render(element, VDOM, [], hooks);
@@ -136,9 +142,10 @@ export const subscribeRender = (element, callback) => {
     VDOM.current = [];
 
     callback(renderableVDOM, VDOMDiff);
+    afterUpdateFn();
   };
 
-  const hooks = createHooks(update);
+  const hooks = createHooks(update, onUpdateCallback);
 
   update(hooks);
 };

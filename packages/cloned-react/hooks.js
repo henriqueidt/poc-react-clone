@@ -4,6 +4,10 @@ export const useState = (...args) => {
   return globalHooks.useState(...args);
 };
 
+export const useEffect = (...args) => {
+  return globalHooks.useEffect(...args);
+};
+
 const areStatesDifferent = (previousState, newState) => {
   if (typeof newState === "object") {
     return JSON.stringify(previousState) !== JSON.stringify(newState);
@@ -14,7 +18,6 @@ const areStatesDifferent = (previousState, newState) => {
 /**
  * createUseState is a factory function that returns
  * a function that will be used to create the useState hook
- *
  * */
 
 const createUseState = (onUpdate, hooksMap) => (path, isFirstRender) => {
@@ -66,12 +69,81 @@ const createUseState = (onUpdate, hooksMap) => (path, isFirstRender) => {
   };
 };
 
+const areDependenciesNotMutated = (a, b) => {
+  if (Array.isArray(a) && Array.isArray(b)) {
+    return a.every((item, index) => item === b[index]);
+  }
+  return false;
+};
+
+/**
+ * createUseEffect is a factory function that returns
+ * a function that will be used to create the useEffect hook
+ * */
+const createUseEffect = (onUpdateCallback, hooksMap) => {
+  const callbackRefs = { current: () => {} };
+
+  onUpdateCallback(() => {
+    callbackRefs.current();
+    callbackRefs.current = () => {};
+  });
+
+  // This function will be used to register the effect after the DOM update
+  // It will be used in the components to register the effect, like staking them into
+  // the pile of effects to be executed after the DOM update
+  const registerEffectAfterDOMUpdate = (callback) => {
+    const { current } = callbackRefs;
+    callbackRefs.current = () => {
+      current();
+      callback();
+    };
+  };
+
+  return (path, isFirstRender) => {
+    let effectIndexRef = { current: 0 };
+    const currentHook = hooksMap[path];
+    if (isFirstRender) {
+      currentHook.effect = [];
+    }
+
+    // The function returned here, is actually the useEffect hook
+    // that will be used in the component
+    return (effectCallback, dependencies) => {
+      const effectIndex = effectIndexRef.current;
+      const prevEffect = currentHook.effect[effectIndex] || {};
+
+      // get the cleanup function from the previous effect or default to a noop function
+      const { cleanup = () => {} } = prevEffect;
+
+      effectIndexRef.current++;
+
+      // if the dependencies are the same, we don't need to register the effect again
+      if (areDependenciesNotMutated(prevEffect.dependencies, dependencies)) {
+        return;
+      }
+      // call the cleanup function from the previous effect before registering next effect
+      cleanup();
+      currentHook.effect[effectIndex] = {
+        dependencies: [...dependencies],
+        // reset cleanup from previous effect
+        cleanup: () => {},
+      };
+      registerEffectAfterDOMUpdate(() => {
+        // here we are executing the effect callback
+        // and also storing its return value, which is the cleanup function
+        currentHook.effect[effectIndex].cleanup =
+          effectCallback() || (() => {});
+      });
+    };
+  };
+};
+
 // This function will be used to set the hooks registry
 // in the globalHooks object
 // This is necessary to be able to access the useState hook
 // in the components
 const setHooksRegistry =
-  (hooksMap, useStateRegistry) => (path, isFirstRender) => {
+  (hooksMap, useStateRegistry, useEffectRegistry) => (path, isFirstRender) => {
     // If it's the first render, we need to create a new entry in the hooksMap
     if (isFirstRender) {
       hooksMap[path] = {};
@@ -80,9 +152,10 @@ const setHooksRegistry =
     // We create the useState hook for the component
     // const useState = useStateRegistry(path, isFirstRender);
     globalHooks.useState = useStateRegistry(path, isFirstRender);
+    globalHooks.useEffect = useEffectRegistry(path, isFirstRender);
   };
 
-export const createHooks = (update) => {
+export const createHooks = (update, onUpdateCallback) => {
   /*
    * hooksMap will store the hooks for each component
    * each entry will have the structure:
@@ -99,7 +172,8 @@ export const createHooks = (update) => {
 
   const onUpdate = () => update(hooks.current);
   const useState = createUseState(onUpdate, hooksMap);
-  const registerHooks = setHooksRegistry(hooksMap, useState);
+  const useEffect = createUseEffect(onUpdateCallback, hooksMap);
+  const registerHooks = setHooksRegistry(hooksMap, useState, useEffect);
   hooks.current = { registerHooks };
   return hooks.current;
 };
